@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Masayoshi Delivery - Sistema</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="tela-login" class="tela-login-overlay">
+        <div class="card login-box">
+            <img src="img/Logo.png" alt="Logo Masayoshi" class="logo">
+            <h2>Acesso Restrito</h2>
+            <p>Faça login para acessar o sistema.</p>
+            
+            <input type="email" id="login-email" placeholder="E-mail de acesso">
+            <input type="password" id="login-senha" placeholder="Senha">
+            
+            <button id="btn-entrar" class="btn-imprimir">Entrar no Sistema</button>
+            <p id="login-erro" class="msg-erro" style="display: none;"></p>
+        </div>
+    </div>
+
+    <div id="app-principal" style="display: none;">
+        <header>
+            <img src="img/Logo.png" alt="Logo Masayoshi Delivery" class="logo">
+            <h1>Masayoshi Delivery</h1>
+            <p>Sistema Interno</p>
+            <button id="btn-sair" class="btn-sair" onclick="fazerLogout()">Sair do Sistema</button>
+        </header>
+
+        <nav class="abas">
+            <button id="aba-retirada" class="aba-ativa" onclick="mudarAba('retirada')">Retirada</button>
+            <button id="aba-entrega" onclick="mudarAba('entrega')">Entrega</button>
+            <button id="aba-clientes" onclick="mudarAba('clientes')">Clientes</button>
+            <button id="aba-dashboard" onclick="mudarAba('dashboard')">Painel</button>
+        </nav>
+
+        <main>
+            <div id="tela-pedidos">
+                <section class="card">
+                    <h2 id="titulo-tipo-pedido">Dados do Cliente (Retirada)</h2>
+                    <input type="tel" id="telefone-cliente" placeholder="(11) 99999-9999" inputmode="numeric">
+                    <input type="text" id="nome-cliente" placeholder="Nome do Cliente">
+
+                    <div id="campos-endereco" style="display: none;">
+                        <input type="tel" id="end-cep" placeholder="Digite o CEP (Se souber)" maxlength="9" onblur="buscarCEP()">
+                        
+                        <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                            <select id="end-cidade" style="flex: 1; padding: 15px; background-color: var(--bg-color); color: var(--text-main); border: 2px solid var(--border-color); border-radius: 8px; font-size: 16px;">
+                                <option value="Sao Bernardo do Campo">SBC</option>
+                                <option value="Sao Paulo">São Paulo</option>
+                                <option value="Diadema">Diadema</option>
+                            </select>
+                            <input type="text" id="end-rua" placeholder="Rua / Avenida" style="margin-bottom: 0; flex: 2;" onblur="buscarCepPorEndereco()">
+                        </div>
+
+                        <input type="text" id="end-bairro" placeholder="Bairro" onblur="calcularTaxaPorBairroManual()">
+                        
+                        <div class="end-numero-container">
+                            <input type="text" id="end-numero" placeholder="Número">
+                            <div class="check-inline">
+                                <input type="checkbox" id="check-sem-numero" onchange="toggleNumero()">
+                                <label for="check-sem-numero">S/N</label>
+                            </div>
+                        </div>
+                        <input type="text" id="end-complemento" placeholder="Complemento (Opcional)">
+                        
+                        <div id="mostrador-taxa" style="margin-top: 5px; font-weight: bold; color: var(--primary-color); font-size: 14px; display: none;">
+                            <span id="distancia-km">Bairro: </span> | Taxa: <span id="valor-taxa">R$ 0,00</span>
+                        </div>
+                    </div>
+                </section>
+                
+                <section class="card">
+                    <h2>Cardápio</h2>
+                    <div id="menu-container"></div>
+                </section>
+            </div>
+
+            <div id="tela-clientes" style="display: none;">
+                <section class="card">
+                    <h2>Base de Clientes Salvos</h2>
+                    <div class="header-clientes">
+                        <span>Telefone</span>
+                        <span>Nome / Último Pedido</span>
+                    </div>
+                    <ul id="lista-clientes-salvos">
+                        <li class="lista-vazia">Carregando clientes...</li>
+                    </ul>
+                </section>
+            </div>
+
+            <div id="tela-dashboard" style="display: none;">
+                <div class="filtro-container">
+                    <label for="filtro-data">Análise por Data:</label>
+                    <input type="date" id="filtro-data" onchange="carregarDashboard()">
+                </div>
+                <section class="resumo-financeiro">
+                    <div class="metrica">
+                        <span>Faturamento</span>
+                        <strong id="dash-faturamento">R$ 0,00</strong>
+                    </div>
+                    <div class="metrica">
+                        <span>Total de Pedidos</span>
+                        <strong id="dash-qtd-pedidos">0</strong>
+                    </div>
+                </section>
+                <section class="card">
+                    <h2>Vendas do Dia</h2>
+                    <ul id="lista-vendas-painel" class="modal-lista-historico">
+                        <li class="lista-vazia">Carregando dados...</li>
+                    </ul>
+                </section>
+            </div>
+        </main>
+
+        <div id="modal-cliente" class="modal-overlay" style="display: none;">
+            <div class="modal-content card">
+                <div class="modal-header">
+                    <h2>Perfil do Cliente</h2>
+                    <button class="btn-fechar" onclick="fecharModalCliente()">×</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="modal-tel-original">
+                    <label class="modal-label">Nome:</label>
+                    <input type="text" id="modal-nome" class="modal-input">
+                    <label class="modal-label">Telefone (Editável):</label>
+                    <input type="tel" id="modal-tel" class="modal-input" inputmode="numeric">
+                    
+                    <label class="modal-label">Endereço Principal:</label>
+                    <input type="tel" id="modal-end-cep" class="modal-input" placeholder="CEP" style="margin-bottom: 8px;">
+                    <input type="text" id="modal-end-rua" class="modal-input" placeholder="Rua / Avenida" style="margin-bottom: 8px;">
+                    <input type="text" id="modal-end-bairro" class="modal-input" placeholder="Bairro" style="margin-bottom: 8px;">
+                    <div class="end-numero-container">
+                        <input type="text" id="modal-end-numero" class="modal-input" placeholder="Nº" style="margin-bottom: 20px;">
+                        <input type="text" id="modal-end-complemento" class="modal-input" placeholder="Complemento" style="margin-bottom: 20px;">
+                    </div>
+
+                    <button class="btn-salvar" onclick="salvarEdicaoCliente()">Salvar Alteração</button>
+                    <h3 class="modal-historico-titulo">Histórico de Pedidos</h3>
+                    <ul id="modal-historico" class="modal-lista-historico"></ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="painel-carrinho" class="carrinho-flutuante" style="display: none;">
+            <div class="carrinho-header fechado" onclick="toggleCarrinho()">
+                <div class="carrinho-resumo">
+                    <h3>🛒 Carrinho</h3>
+                    <span id="resumo-valores" class="resumo-valores">0 itens - R$ 0,00</span>
+                </div>
+                <span id="seta-carrinho" class="seta-carrinho">▲</span>
+            </div>
+            
+            <div id="carrinho-conteudo" class="carrinho-conteudo" style="display: none;">
+                <ul id="lista-pedido"></ul>
+                <button id="btn-imprimir" class="btn-imprimir">
+                    <span id="btn-texto-itens">0 itens</span>
+                    <span id="btn-texto-total">R$ 0,00</span>
+                </button>
+            </div>
+        </div>
+        <div id="modal-checkout" class="modal-overlay" style="display: none;">
+            <div class="modal-content card" style="max-width: 700px;">
+                <div class="modal-header">
+                    <h2>Revisão e Finalização</h2>
+                    <button class="btn-fechar" onclick="fecharModalCheckout()">×</button>
+                </div>
+                <div class="modal-body">
+                    <h3 class="modal-historico-titulo">Itens do Pedido (Editáveis)</h3>
+                    <div id="checkout-itens" style="margin-bottom: 15px; max-height: 250px; overflow-y: auto; padding-right: 5px;">
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 25px; align-items: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 20px;">
+                        <input type="text" id="novo-item-nome" placeholder="Nome do item extra (Ex: Embalagem)" style="margin-bottom: 0; flex: 2;">
+                        <input type="number" id="novo-item-valor" placeholder="R$ 0,00" style="margin-bottom: 0; flex: 1;">
+                        <button class="btn-imprimir" style="padding: 15px; width: auto; font-size: 14px;" onclick="adicionarItemExtraCheckout()">+ Adicionar</button>
+                    </div>
+
+                    <h3 class="modal-historico-titulo">Valores Finais</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div>
+                            <label class="modal-label">Subtotal dos Itens (R$):</label>
+                            <input type="text" id="checkout-subtotal" class="modal-input" value="0.00" disabled style="background-color: var(--bg-color); cursor: not-allowed; opacity: 0.7;">
+                        </div>
+                        <div>
+                            <label class="modal-label">Taxa de Entrega / Frete (R$):</label>
+                            <input type="number" id="checkout-frete" class="modal-input" value="0.00" step="0.50" oninput="calcularTotalCheckout()">
+                        </div>
+                        <div>
+                            <label class="modal-label">Desconto (R$):</label>
+                            <input type="number" id="checkout-desconto" class="modal-input" value="0.00" step="0.50" oninput="calcularTotalCheckout()">
+                        </div>
+                        <div>
+                            <label class="modal-label">Acréscimo / Imposto (R$):</label>
+                            <input type="number" id="checkout-imposto" class="modal-input" value="0.00" step="0.50" oninput="calcularTotalCheckout()">
+                        </div>
+                    </div>
+
+                    <div style="text-align: right; margin-bottom: 25px; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <span style="font-size: 14px; color: var(--text-muted); display: block; margin-bottom: 5px;">TOTAL A COBRAR</span>
+                        <strong id="checkout-total-final" style="display: block; font-size: 32px; color: var(--primary-color);">R$ 0,00</strong>
+                    </div>
+    <h3 class="modal-historico-titulo">Pagamento</h3>
+                    <div style="margin-bottom: 25px; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <label class="modal-label">Forma de Pagamento:</label>
+                        <select id="checkout-pagamento" class="modal-input" onchange="toggleOpcoesPagamento()" style="margin-bottom: 10px; padding: 12px; width: 100%; border-radius: 8px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-main); font-size: 16px;">
+                            <option value="Não Informado">Selecione...</option>
+                            <option value="Débito">Débito</option>
+                            <option value="Crédito">Crédito</option>
+                            <option value="Pix">Pix</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="Vale Refeição">Vale Refeição</option>
+                        </select>
+                        <div id="div-pagamento-pix" style="display: none; align-items: center; gap: 10px; margin-top: 10px;">
+                            <input type="checkbox" id="check-pedido-pago" style="width: 20px; height: 20px; accent-color: #198754; cursor: pointer;">
+                            <label for="check-pedido-pago" style="font-size: 15px; font-weight: bold; color: #198754; cursor: pointer;">Pedido JÁ PAGO (O valor já caiu na conta)</label>
+                        </div>
+
+                        <div id="div-pagamento-dinheiro" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; align-items: end; margin-top: 10px;">
+                            <div>
+                                <label class="modal-label">Troco para quanto? (R$):</label>
+                                <input type="number" id="checkout-troco-para" class="modal-input" placeholder="0.00" step="0.50" oninput="calcularTroco()" style="margin-bottom: 0;">
+                            </div>
+                            <div style="text-align: right;">
+                                <label class="modal-label">Levar de Troco:</label>
+                                <strong id="display-troco" style="display: block; font-size: 20px; color: #fd7e14;">R$ 0,00</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-salvar" style="margin-bottom: 0;" onclick="confirmarEImprimirCheckout()">✅ Confirmar e Imprimir Recibo</button>
+                </div>
+            </div>
+        </div>
+        <div id="recibo-imprimir" style="display: none;"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
