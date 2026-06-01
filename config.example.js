@@ -1,9 +1,8 @@
 const firebaseConfig = {
-    apiKey: "SUA_API_KEY_AQUI",
-    authDomain: "SEU_PROJETO.firebaseapp.com",
-    projectId: "SEU_PROJETO",
-    storageBucket: "SEU_PROJETO.firebasestorage.app",
-    messagingSenderId: "00000000000",
-    appId: "1:0000000:web:000000000",
-    measurementId: "G-00000000"
+  apiKey: "AIzaSyAU9DkVO30qvfvkYSg0BnmqZsVQmDTWiao",
+  authDomain: "masayoshi-demo-portfolio.firebaseapp.com",
+  projectId: "masayoshi-demo-portfolio",
+  storageBucket: "masayoshi-demo-portfolio.firebasestorage.app",
+  messagingSenderId: "593377941977",
+  appId: "1:593377941977:web:e5c3c1c283a8d4c4eee1c8"
 };
